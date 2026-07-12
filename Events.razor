@@ -1,0 +1,39 @@
+@page "/events"
+@page "/events/{EventId:int}"
+@inject EventRepository Repo
+
+<PageTitle>Events</PageTitle>
+
+<h1>Upcoming Events</h1>
+
+@if (EventId is not null)
+{
+    var single = Repo.GetById(EventId.Value);
+    if (single is null)
+    {
+        <!-- Routing fix: an out-of-range id (e.g. /events/999) used to throw a
+             NullReferenceException. Now it degrades gracefully. -->
+        <p class="alert alert-warning">No event found with id @EventId.</p>
+    }
+    else
+    {
+        <EventCard @bind-Event="single" />
+    }
+    <a href="/events">&larr; Back to all events</a>
+}
+else
+{
+    <div class="event-grid">
+        @foreach (var ev in Repo.GetAll())
+        {
+            var localEvent = ev; // local copy avoids the classic foreach-closure bug
+            <EventCard @bind-Event="localEvent" />
+            <a href="/events/@ev.Id">View details</a>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int? EventId { get; set; }
+}

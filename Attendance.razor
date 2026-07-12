@@ -1,0 +1,61 @@
+@page "/attendance"
+@inject UserSessionService Session
+@implements IDisposable
+
+<PageTitle>Attendance Tracker</PageTitle>
+
+<h1>Attendance Tracker</h1>
+
+@if (Session.MyRegistrations.Count == 0)
+{
+    <p>No registrations yet this session. <a href="/registration">Register for an event</a>.</p>
+}
+else
+{
+    <table class="attendance-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Registered At</th>
+                <th>Checked In</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var person in Session.MyRegistrations)
+            {
+                <tr>
+                    <td>@person.FullName</td>
+                    <td>@person.Email</td>
+                    <td>@person.RegisteredAt.ToString("g")</td>
+                    <td>
+                        @if (person.CheckedIn)
+                        {
+                            <span>✅ Checked in</span>
+                        }
+                        else
+                        {
+                            <button class="btn" @onclick="() => Session.CheckIn(person)">
+                                Check in
+                            </button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        // Subscribe so the table re-renders the instant state changes
+        // (e.g. a new registration happens on another tab of the same session).
+        Session.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        Session.OnChange -= StateHasChanged;
+    }
+}

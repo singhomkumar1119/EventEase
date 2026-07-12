@@ -1,0 +1,89 @@
+@* 
+    EventCard is a reusable presentational + editable component.
+    It demonstrates two-way data binding: parent pages bind an EventModel to
+    this component with @bind-Event, and any edits made inside the card
+    (name, date, location, capacity) flow straight back up to the parent.
+*@
+
+<div class="event-card">
+    @if (Event is not null)
+    {
+        <div class="event-card-header">
+            <input class="event-title-input"
+                   value="@Event.Name"
+                   @onchange="OnNameChanged" />
+        </div>
+
+        <div class="event-card-body">
+            <label>
+                Date:
+                <input type="date"
+                       value="@Event.Date.ToString("yyyy-MM-dd")"
+                       @onchange="OnDateChanged" />
+            </label>
+
+            <label>
+                Location:
+                <input value="@Event.Location" @onchange="OnLocationChanged" />
+            </label>
+
+            <label>
+                Capacity:
+                <input type="number"
+                       value="@Event.Capacity"
+                       @onchange="OnCapacityChanged" />
+            </label>
+
+            <p class="event-description">@Event.Description</p>
+
+            <p class="event-registered">
+                @Event.RegisteredCount / @Event.Capacity registered
+            </p>
+        </div>
+    }
+</div>
+
+@code {
+    // Two-way binding entry point: parent uses @bind-Event="myEvent"
+    [Parameter]
+    public EventModel? Event { get; set; }
+
+    [Parameter]
+    public EventCallback<EventModel?> EventChanged { get; set; }
+
+    private async Task OnNameChanged(ChangeEventArgs e)
+    {
+        if (Event is null) return;
+        Event.Name = e.Value?.ToString() ?? string.Empty;
+        await EventChanged.InvokeAsync(Event);
+    }
+
+    private async Task OnDateChanged(ChangeEventArgs e)
+    {
+        if (Event is null) return;
+        if (DateTime.TryParse(e.Value?.ToString(), out var parsed))
+        {
+            Event.Date = parsed;
+            await EventChanged.InvokeAsync(Event);
+        }
+    }
+
+    private async Task OnLocationChanged(ChangeEventArgs e)
+    {
+        if (Event is null) return;
+        Event.Location = e.Value?.ToString() ?? string.Empty;
+        await EventChanged.InvokeAsync(Event);
+    }
+
+    private async Task OnCapacityChanged(ChangeEventArgs e)
+    {
+        if (Event is null) return;
+        // Validation/optimization fix: guard against non-numeric or negative
+        // input instead of letting an unhandled exception crash the render.
+        if (int.TryParse(e.Value?.ToString(), out var parsedCapacity) && parsedCapacity > 0)
+        {
+            Event.Capacity = parsedCapacity;
+            await EventChanged.InvokeAsync(Event);
+        }
+    }
+}
